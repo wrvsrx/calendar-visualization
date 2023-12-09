@@ -42,7 +42,7 @@ mainFunc timeZone options = do
       f = localTimeToUTC timeZone
     classfiedEvent = zip eventsInRange (map (either error id . classifyEvent classifyConfig) eventsInRange)
     unknownEvents = filter (\(_, t) -> null t) classfiedEvent
-    checkEventRes = checkEvent eventsInRange
+    checkEventRes = checkEvent timeZone eventsInRange
     statistics = accountEvent (map (second (fromMaybe (EventType "unknown"))) classfiedEvent)
   lift $ tell ["unknownEvents: " <> ushow unknownEvents]
   unless (null checkEventRes) $ lift $ tell [ushow checkEventRes]

@@ -11,23 +11,33 @@ module Summarize (
 import Classify (EventType (..))
 import Data.List (sort)
 import Data.Map qualified as M
-import Data.Time (diffUTCTime)
+import Data.Time (TimeZone, ZonedTime (..), diffUTCTime, utcToZonedTime)
 import Event (Event (..))
 
-data CheckError = NotEndToEnd (Event, Event) | EmptyEvent
+data ZonedEvent = ZonedEvent
+  { summary :: String
+  , start :: ZonedTime
+  , end :: ZonedTime
+  }
+  deriving (Show)
+
+eventToZonedEvent :: TimeZone -> Event -> ZonedEvent
+eventToZonedEvent tz (Event su s e) = ZonedEvent su (utcToZonedTime tz s) (utcToZonedTime tz e)
+
+data CheckError = NotEndToEnd (ZonedEvent, ZonedEvent) | EmptyEvent
   deriving
     (Show)
 
-checkEndToEnd :: [Event] -> Maybe CheckError
-checkEndToEnd [] = Just EmptyEvent
-checkEndToEnd [_] = Nothing
-checkEndToEnd (x : y : xs) =
+checkEndToEnd :: TimeZone -> [Event] -> Maybe CheckError
+checkEndToEnd _ [] = Just EmptyEvent
+checkEndToEnd _ [_] = Nothing
+checkEndToEnd timeZone (x : y : xs) =
   if x.endTime /= y.startTime
-    then Just (NotEndToEnd (x, y))
-    else checkEndToEnd (y : xs)
+    then Just (NotEndToEnd (eventToZonedEvent timeZone x, eventToZonedEvent timeZone y))
+    else checkEndToEnd timeZone (y : xs)
 
-checkEvent :: [Event] -> Maybe CheckError
-checkEvent evs = checkEndToEnd (sort evs)
+checkEvent :: TimeZone -> [Event] -> Maybe CheckError
+checkEvent tz evs = checkEndToEnd tz (sort evs)
 
 accountEvent :: [(Event, EventType)] -> M.Map EventType Double
 accountEvent =
