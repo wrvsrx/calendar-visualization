@@ -27,7 +27,9 @@ import ParseVDirSyncer (
 import Summarize (accountEvent, checkEvent)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (takeDirectory)
-import Text.Show.Unicode (ushow)
+import Text.Show.Unicode (uprint, ushow)
+
+-- newtype EventWithTimeCost = EventWithTimeCost {eventWithTimeCost :: (EventType, Double)}
 
 mainFunc :: TimeZone -> Cli.CalendarSummaryOption -> ExceptT String (WriterT [String] IO) ()
 mainFunc timeZone options = do
@@ -44,12 +46,14 @@ mainFunc timeZone options = do
     unknownEvents = filter (\(_, t) -> null t) classfiedEvent
     checkEventRes = checkEvent timeZone eventsInRange
     statistics = accountEvent (map (second (fromMaybe (EventType "unknown"))) classfiedEvent)
+    eventsWithTimeCost = M.toList statistics
   lift $ tell ["unknownEvents: " <> ushow unknownEvents]
   unless (null checkEventRes) $ lift $ tell [ushow checkEventRes]
   let
-    totalTime = foldl (\a (_, b) -> a + b) 0.0 (M.toList statistics)
+    totalTime = foldl (\a (_, b) -> a + b) 0.0 eventsWithTimeCost
   lift $ tell ["totalTime: " <> show totalTime]
-  lift $ lift $ toPng options.outputPng (M.toList statistics)
+  l2 $ toPng options.outputPng eventsWithTimeCost
+  l2 $ mapM_ (\(EventType a, t) -> uprint (a, t / 3600.0)) eventsWithTimeCost
  where
   l2 = lift . lift
 
