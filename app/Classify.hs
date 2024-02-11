@@ -8,6 +8,7 @@ module Classify (
   EventType (..),
   classifyEvent,
   ClassifyConfig (..),
+  ClassifyError (..),
 ) where
 
 import Data.Aeson ((.:))
@@ -34,23 +35,29 @@ data ClassifyConfig = ClassifyConfig
   }
   deriving (Generic)
 
+data ClassifyError = ClassifyError
+  { errorMessage :: String
+  , event :: Event
+  } deriving (Show)
+
 instance A.FromJSON ClassifyConfig
 instance A.ToJSON ClassifyConfig
 
-classifyEvent :: ClassifyConfig -> Event -> Either String (Maybe EventType)
-classifyEvent config (Event summary _ _) =
+classifyEvent :: ClassifyConfig -> Event -> Either ClassifyError (Maybe EventType)
+classifyEvent config event =
   -- summary pattern
   -- '<category>: <description>'
   -- '<summary>'
   let
+    summary = event.summary
     splitResult = splitOn ":" summary
     et = case splitResult of
       [eventTypeAbbr, description] -> do
         case description of
           ' ' : _ -> case M.lookup eventTypeAbbr config.eventAbbrToType of
             Just x -> Right (Just x)
-            Nothing -> Left ("can't find such type: " <> eventTypeAbbr)
-          _ -> Left "no space ahead of name"
+            Nothing -> Left $ ClassifyError ("can't find such type: " <> eventTypeAbbr) event
+          _ -> Left $ ClassifyError "no space ahead of name" event
       [summary_] ->
         let
           maybeEventType = M.lookup summary_ config.eventToType
@@ -58,7 +65,7 @@ classifyEvent config (Event summary _ _) =
           case maybeEventType of
             Just et_ -> Right (Just et_)
             Nothing -> Right Nothing
-      [] -> Left "impossible case"
-      _ -> Left "too much `:`"
+      [] -> Left (ClassifyError "impossible case" event)
+      _ -> Left (ClassifyError "too much `:`" event)
    in
     et

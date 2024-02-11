@@ -1,7 +1,7 @@
 { mkDerivation, aeson, base, bytestring, Chart, Chart-cairo
 , containers, data-default, deepseq, directory, filepath, iCalendar
-, lib, optparse-applicative, split, text, time, transformers
-, unicode-show
+, lib, optparse-applicative, pretty-simple, split, text, time
+, transformers, unicode-show
 }:
 mkDerivation {
   pname = "calendar-visualization";
@@ -11,8 +11,8 @@ mkDerivation {
   isExecutable = true;
   executableHaskellDepends = [
     aeson base bytestring Chart Chart-cairo containers data-default
-    deepseq directory filepath iCalendar optparse-applicative split
-    text time transformers unicode-show
+    deepseq directory filepath iCalendar optparse-applicative
+    pretty-simple split text time transformers unicode-show
   ];
   license = "unknown";
   mainProgram = "calendar-visualization";

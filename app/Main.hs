@@ -27,7 +27,9 @@ import ParseVDirSyncer (
 import Summarize (accountEvent, checkEvent)
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (takeDirectory)
+import Text.Pretty.Simple (pShow)
 import Text.Show.Unicode (uprint, ushow)
+import Data.Text.Lazy qualified as T
 
 -- newtype EventWithTimeCost = EventWithTimeCost {eventWithTimeCost :: (EventType, Double)}
 
@@ -42,7 +44,7 @@ mainFunc timeZone options = do
     eventsInRange = mapMaybe (filterAccordingToTime (bimap f f options.timeRange)) events
      where
       f = localTimeToUTC timeZone
-    classfiedEvent = zip eventsInRange (map (either error id . classifyEvent classifyConfig) eventsInRange)
+    classfiedEvent = zip eventsInRange (map (either (error . T.unpack . pShow) id . classifyEvent classifyConfig) eventsInRange)
     unknownEvents = filter (\(_, t) -> null t) classfiedEvent
     checkEventRes = checkEvent timeZone eventsInRange
     statistics = accountEvent (map (second (fromMaybe (EventType "unknown"))) classfiedEvent)

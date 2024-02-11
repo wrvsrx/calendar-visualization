@@ -84,6 +84,7 @@ executable calendar-visualization
     , filepath
     , iCalendar
     , optparse-applicative
+    , pretty-simple
     , split
     , text
     , time
