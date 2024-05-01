@@ -33,12 +33,13 @@ data ClassifyConfig = ClassifyConfig
   , eventToType :: M.Map String EventType
   , eventAbbrToType :: M.Map String EventType
   }
-  deriving (Generic)
+  deriving (Generic, Show)
 
 data ClassifyError = ClassifyError
   { errorMessage :: String
   , event :: Event
-  } deriving (Show)
+  }
+  deriving (Show)
 
 instance A.FromJSON ClassifyConfig
 instance A.ToJSON ClassifyConfig

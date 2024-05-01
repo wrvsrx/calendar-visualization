@@ -4,7 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE NoFieldSelectors #-}
 
-import Classify (ClassifyConfig, EventType (..), classifyEvent)
+import Classify (EventType (..), classifyEvent)
 import Cli (
   CalendarSummaryOption (..),
   parseCli,
@@ -13,11 +13,9 @@ import Control.Monad (unless)
 import Control.Monad.Trans.Class (MonadTrans (lift))
 import Control.Monad.Trans.Except (ExceptT, runExceptT)
 import Control.Monad.Trans.Writer (WriterT, runWriterT, tell)
-import Data.Aeson qualified as A
 import Data.Bifunctor (Bifunctor (second), bimap)
-import Data.Functor ((<&>))
 import Data.Map qualified as M
-import Data.Maybe (fromJust, fromMaybe, mapMaybe)
+import Data.Maybe (fromMaybe, mapMaybe)
 import Data.Time (TimeZone, getCurrentTimeZone, localTimeToUTC)
 import Draw (toPng)
 import ParseVDirSyncer (
@@ -38,13 +36,12 @@ mainFunc timeZone options = do
   let
     cacheDir = takeDirectory options.cacheJSONPath
   l2 $ createDirectoryIfMissing True cacheDir
-  classifyConfig :: ClassifyConfig <- l2 $ A.decodeFileStrict options.classifyConfig <&> fromJust
   events <- parseEventsUsingCache options.cacheJSONPath options.calendarDir
   let
     eventsInRange = mapMaybe (filterAccordingToTime (bimap f f options.timeRange)) events
      where
       f = localTimeToUTC timeZone
-    classfiedEvent = zip eventsInRange (map (either (error . T.unpack . pShow) id . classifyEvent classifyConfig) eventsInRange)
+    classfiedEvent = zip eventsInRange (map (either (error . T.unpack . pShow) id . classifyEvent options.classifyConfig) eventsInRange)
     unknownEvents = filter (\(_, t) -> null t) classfiedEvent
     checkEventRes = checkEvent timeZone eventsInRange
     statistics = accountEvent (map (second (fromMaybe (EventType "unknown"))) classfiedEvent)
