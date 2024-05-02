@@ -62,7 +62,7 @@ data CliOption = CliOption
 -- 如果没输入，那么 timeRange 默认为当天
 -- timeRange : 默认当天，或者 --date，或者 --startTime 到现在，或者指定 --startTime 到 --endTime
 -- outputPng : 必要
--- cacheJSONPath : 有默认值
+-- cacheJSONPath : 优先 cli, 其次从 config 里面读取，最后默认值
 -- config : 必要，包含分类设置（必要）跟 calendarDir（可选）
 -- calendarDir : 可选，取决于有没有
 cliParser :: Parser CliOption
@@ -120,6 +120,7 @@ cliParser = do
 
 data ConfigFromFile = ConfigFromFile
   { calendarDir :: Maybe FilePath
+  , cacheJSONPath :: Maybe FilePath
   , classifyConfig :: ClassifyConfig
   }
   deriving (Show, Generic)
@@ -172,6 +173,6 @@ parseCli = do
             , LocalTime{localDay = succ currentDay, localTimeOfDay = TimeOfDay 0 0 0}
             )
       , outputPng = cliOption.outputPng
-      , cacheJSONPath = fromMaybe defaultCacheFile cliOption.cacheJSONPath
+      , cacheJSONPath = fromMaybe defaultCacheFile $ cliOption.cacheJSONPath <|> config.cacheJSONPath
       , classifyConfig = config.classifyConfig
       }
